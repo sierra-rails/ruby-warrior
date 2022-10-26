@@ -1,4 +1,19 @@
-- sludge takes 5 damage, starting with 12 health
-- sludge gives 3 damage
-- warrior starts with 20 health
+# Warrior
 
+- 20 HP (start)
+- Gives 5 damage
+
+# Sludge
+
+- 12 HP (start)
+- Gives 3 damage
+
+# Thick Sludge
+
+- 20 HP (start)
+- Gives 3 damage
+
+# Archer
+
+- 7 HP (start)
+- Gives 3 damage

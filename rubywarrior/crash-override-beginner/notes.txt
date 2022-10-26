@@ -17,3 +17,7 @@
 
 - 7 HP (start)
 - Gives 3 damage
+
+# Captive
+
+- 1 HP (start)

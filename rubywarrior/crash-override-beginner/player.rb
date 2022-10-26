@@ -16,8 +16,16 @@ class Player
         puts "Walking"
         warrior.walk!
       else
-        puts "Attacking"
-        warrior.attack!
+        if next_space.empty?
+          puts "Walking"
+          warrior.walk!
+        elsif next_space.captive?
+          puts "Rescuing!"
+          warrior.rescue!
+        else
+          puts "Attacking"
+          warrior.attack!
+        end
       end
     end
 
@@ -26,9 +34,21 @@ class Player
 
   def should_rest?
     if taking_damage?
-      false
+      false # never rest when taking damage
     else
-      next_space.empty? && warrior.health < HEALTH_BUFFER
+      if next_space.empty?
+        if warrior.health < HEALTH_BUFFER
+          true # empty space ahead, low health, recharge!
+        else
+          false # plenty of health, don't rest
+        end
+      else
+        if next_space.captive?
+          false # dont rest when there is a captive to rescue
+        else
+          false # next space is an enemy, don't rest
+        end
+      end
     end
   end
 

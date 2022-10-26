@@ -1,0 +1,4 @@
+- sludge takes 5 damage, starting with 12 health
+- sludge gives 3 damage
+- warrior starts with 20 health
+

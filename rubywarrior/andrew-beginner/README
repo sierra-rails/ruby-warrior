@@ -1,18 +1,36 @@
-Level 1
+Level 5
 
-You see before yourself a long hallway with stairs at the end. There is nothing in the way.
+You hear cries for help. Captives must need rescuing.
 
-Tip: Call warrior.walk! to walk forward in the Player 'play_turn' method.
+Tip: Use warrior.feel.captive? to see if there is a captive and warrior.rescue! to rescue him. Don't attack captives.
 
- --------
-|@      >|
- --------
+ -------
+|@ CaaSC|
+ -------
 
   > = Stairs
   @ = Andrew (20 HP)
+  C = Captive (1 HP)
+  a = Archer (7 HP)
+  S = Thick Sludge (24 HP)
 
 
 Warrior Abilities:
+
+  warrior.rescue!
+    Rescue a captive from his chains (earning 20 points) in given direction (forward by default).
+
+  warrior.health
+    Returns an integer representing your health.
+
+  warrior.rest!
+    Gain 10% of max health back, but do nothing more.
+
+  warrior.feel
+    Returns a Space for the given direction (forward by default).
+
+  warrior.attack!
+    Attacks a unit in given direction (forward by default).
 
   warrior.walk!
     Move in the given direction (forward by default).

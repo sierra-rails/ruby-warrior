@@ -1,30 +1,61 @@
+require 'debug'
+
 class Player
   HEALTH_BUFFER = 20.freeze
+  ARCHER_BUFFER = 10.freeze
   attr_accessor :warrior
 
   @prior_health = nil
   @warrior = nil
+  @wall_reached = false
 
   def play_turn(warrior)
     @warrior = warrior
+    puts "Warrior Health: #{ warrior.health }"
+    # debugger
 
-    if should_rest?
-      puts "Resting"
-      warrior.rest!
-    else
-      if should_walk?
-        puts "Walking"
-        warrior.walk!
+    if taking_damage?
+      # i'm taking damage, figure out who I'm taking damage from
+      if enemy_in_next_space?
+        warrior.attack!(:forward)
+      elsif enemy_in_previous_space?
+        warrior.attack(:previous)
       else
-        if next_space.empty?
-          puts "Walking"
+        # it's an archer
+        if warrior.health > ARCHER_BUFFER # can I survive?
           warrior.walk!
-        elsif next_space.captive?
-          puts "Rescuing!"
-          warrior.rescue!
         else
-          puts "Attacking"
-          warrior.attack!
+          # if not, find shelter to rest
+          warrior.walk!(:backward)
+        end
+      end
+    else
+      if unhealthy?
+        warrior.rest!
+      else
+        if previous_space.wall?
+          @wall_reached = true
+          warrior.walk!(:forward)
+        else
+          if !@wall_reached
+            if previous_space.empty?
+              warrior.walk!(:backward)
+            elsif previous_space.captive?
+              warrior.rescue!(:backward)
+            elsif previous_space.enemy?
+              warrior.attack!(:backward)
+            end
+          else
+            if next_space.empty?
+              warrior.walk!(:forward)
+            elsif next_space.captive?
+              warrior.rescue!(:forward)
+            elsif next_space.enemy?
+              warrior.attack!
+            else
+              warrior.walk(:foward)
+            end
+          end
         end
       end
     end
@@ -32,28 +63,12 @@ class Player
     @prior_health = warrior.health
   end
 
-  def should_rest?
-    if taking_damage?
-      false # never rest when taking damage
-    else
-      if next_space.empty?
-        if warrior.health < HEALTH_BUFFER
-          true # empty space ahead, low health, recharge!
-        else
-          false # plenty of health, don't rest
-        end
-      else
-        if next_space.captive?
-          false # dont rest when there is a captive to rescue
-        else
-          false # next space is an enemy, don't rest
-        end
-      end
-    end
+  def unhealthy?
+    warrior.health < HEALTH_BUFFER
   end
 
-  def should_walk?
-    next_space.empty?
+  def health_diff
+    @prior_health - warrior.health
   end
 
   def taking_damage?
@@ -66,5 +81,29 @@ class Player
 
   def next_space
     warrior.feel
+  end
+  
+  def previous_space
+    warrior.feel(:backward)
+  end
+
+  def enemy_in_next_space?
+    detect_enemy(direction: :forward)
+  end
+
+  def enemy_in_previous_space?
+    detect_enemy(direction: :backward)
+  end
+
+  def detect_enemy(direction:)
+    if warrior.feel(direction).empty?
+      false
+    else
+      if warrior.feel(direction).captive?
+        false
+      else
+        true
+      end
+    end
   end
 end

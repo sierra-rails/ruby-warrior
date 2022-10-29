@@ -7,7 +7,6 @@ class Player
 
   @prior_health = nil
   @warrior = nil
-  @wall_reached = false
 
   def play_turn(warrior)
     @warrior = warrior
@@ -15,52 +14,53 @@ class Player
     # debugger
 
     if taking_damage?
-      # i'm taking damage, figure out who I'm taking damage from
-      if enemy_in_next_space?
-        warrior.attack!(:forward)
-      elsif enemy_in_previous_space?
-        warrior.attack(:previous)
-      else
-        # it's an archer
-        if warrior.health > ARCHER_BUFFER # can I survive?
-          warrior.walk!
-        else
-          # if not, find shelter to rest
-          warrior.walk!(:backward)
-        end
-      end
+      taking_damage_tactic!
     else
       if unhealthy?
-        warrior.rest!
-      else
-        if previous_space.wall?
-          @wall_reached = true
-          warrior.walk!(:forward)
+        if next_space.stairs?
+          warrior.walk!(:forward) # just go down the stairs instead of resting
         else
-          if !@wall_reached
-            if previous_space.empty?
-              warrior.walk!(:backward)
-            elsif previous_space.captive?
-              warrior.rescue!(:backward)
-            elsif previous_space.enemy?
-              warrior.attack!(:backward)
-            end
-          else
-            if next_space.empty?
-              warrior.walk!(:forward)
-            elsif next_space.captive?
-              warrior.rescue!(:forward)
-            elsif next_space.enemy?
-              warrior.attack!
-            else
-              warrior.walk(:foward)
-            end
-          end
+          warrior.rest!
         end
+      else
+        explore!
       end
     end
 
     @prior_health = warrior.health
+  end
+
+  def taking_damage_tactic!
+    # i'm taking damage, figure out who I'm taking damage from
+    if enemy_in_next_space?
+      warrior.attack!(:forward)
+    elsif enemy_in_previous_space?
+      warrior.attack(:previous)
+    else
+      # it's an archer
+      if warrior.health > ARCHER_BUFFER # can I survive?
+        warrior.walk!
+      else
+        # if not, find shelter to rest
+        warrior.walk!(:backward)
+      end
+    end
+  end
+
+  def explore!
+    if next_space.wall?
+      warrior.pivot!
+    else
+      if next_space.empty?
+        warrior.walk!(:forward)
+      elsif next_space.captive?
+        warrior.rescue!(:forward)
+      elsif next_space.enemy?
+        warrior.attack!
+      else
+        warrior.walk(:foward)
+      end
+    end
   end
 
   def unhealthy?

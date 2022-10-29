@@ -1,5 +1,12 @@
 require 'debug'
 
+# - Bind immediate enemies (if any)
+# - Attack immediate enemies (if any)
+# - if under attack, move towards nearest enemy
+# - otherwise rest
+# - Rescue immediate captives (if any) 
+# - Move towards the stairs
+
 class Player
   HEALTH_BUFFER = 20.freeze
   ENEMY_BUFFER = 10.freeze
@@ -15,29 +22,33 @@ class Player
 
     puts "Warrior Health: #{ warrior.health }"
     puts "Immediate Enemies: #{ immediate_enemies.inspect }"
+    puts "Immediate Captives: #{ immediate_captives.inspect }"
+    puts "Immediate Stairs: #{ immediate_stairs.inspect }"
 
-    if taking_damage?
-      puts "🤕 TAKING DAMAGE"
-      taking_damage_tactic!
+    if immediate_enemies.count > 0
+      if immediate_enemies.count == 1
+        warrior.attack!(immediate_enemies.first)
+      else
+        warrior.bind!(immediate_enemies.first)
+      end
     else
-      if immediate_enemies.count > 0
-        # attack first
-        attack_or do
+      if taking_damage?
+        if warrior.health > ENEMY_BUFFER # can I survive?
+          # TODO move TOWARDS the enemy or shoot him if he's within range
           warrior.walk!(warrior.direction_of_stairs)
+        else
+          # if not, find shelter to rest
+          warrior.walk!(:backward)
         end
       else
         if unhealthy?
-          puts "💊 UNHEALTHY"
-          if next_space.stairs?
-            warrior.walk!(:forward) # just go down the stairs instead of resting
-          else
-            attack_or do
-              warrior.rest!
-            end
-          end
+          warrior.rest!
         else
-          puts "🏔️ EXPLORING"
-          explore!
+          if immediate_captives.count > 0
+            warrior.rescue!(immediate_captives.first)
+          else
+            warrior.walk!(warrior.direction_of_stairs)
+          end
         end
       end
     end
@@ -45,48 +56,8 @@ class Player
     @prior_health = warrior.health
   end
 
-  def taking_damage_tactic!
-    # i'm taking damage, figure out who I'm taking damage from
-    attack_or do
-      # it's an archer or wizard
-      if warrior.health > ENEMY_BUFFER # can I survive?
-        warrior.walk!(:forward)
-      else
-        # if not, find shelter to rest
-        warrior.walk!(:backward)
-      end
-    end
-  end
-
-  def attack_or
-    if immediate_enemies.count > 0
-      warrior.attack!(immediate_enemies.first)
-      # DIRECTIONS.map do |direction|
-      #   if enemy_in_nearby?(direction: direction)
-      #     warrior.shoot!(direction)
-      #   end
-      # end
-    else
-      yield
-    end
-  end
-
-  def explore!
-    attack_or do
-      if next_space.captive?
-        warrior.rescue!(:forward)
-      else
-        warrior.walk!(warrior.direction_of_stairs)
-      end
-    end
-  end
-
   def unhealthy?
     warrior.health < HEALTH_BUFFER
-  end
-
-  def health_diff
-    @prior_health - warrior.health
   end
 
   def taking_damage?
@@ -103,21 +74,37 @@ class Player
     end
   end
 
+  def immediate_captives
+    DIRECTIONS.select do |direction|
+      captive_in_direction?(direction: direction)
+    end
+  end
+
+  def immediate_stairs
+    DIRECTIONS.select do |direction|
+      stairs_in_direction?(direction: direction)
+    end
+  end
+
   def enemy_nearby?(direction:)
     warrior.look(direction).any? do |space|
       space.enemy?
     end
   end
 
-  def next_space
-    warrior.feel
-  end
-  
   def previous_space
     warrior.feel(:backward)
   end
 
   def enemy_in_direction?(direction:)
     warrior.feel(direction).enemy?
+  end
+
+  def captive_in_direction?(direction:)
+    warrior.feel(direction).captive?
+  end
+
+  def stairs_in_direction?(direction:)
+    warrior.feel(direction).stairs?
   end
 end

@@ -1,13 +1,14 @@
-Level 6
+Level 7
 
-What's that ticking? Some captives have a timed bomb at their feet!
+Another ticking sound, but some sludge is blocking the way.
 
-Tip: Hurry and rescue captives first that have space.ticking?, they'll soon go!
+Tip: Quickly kill the sludge and rescue the captive before the bomb goes off. You can't simply go around them.
 
- ------
-|Cs   >|
-|@  sC |
- ------
+ -----
+| sC >|
+|@ s C|
+| s   |
+ -----
 
   > = Stairs
   @ = zero_cool (20 HP)

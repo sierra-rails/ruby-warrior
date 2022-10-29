@@ -1,11 +1,14 @@
 require 'debug'
 
+# - Rescue immediate ticking captives (if any)
+# - Attack enemies immediately between me and ticking captives (if any)
+# - Move towards distant captives, prioritizing ticking ones
 # - Bind immediate enemies (if any)
 # - Attack immediate enemies (if any)
 # - if under attack, move towards nearest enemy
 # - otherwise rest
 # - Rescue immediate captives (if any)
-# - Move towards distant captives
+# - Move towards distant non-ticking captives
 # - Move towards distant enemies
 # - Move towards the stairs
 
@@ -26,37 +29,60 @@ class Player
     puts "Immediate Enemies: #{ immediate_enemies.inspect }"
     puts "Immediate Captives: #{ immediate_captives.inspect }"
     puts "Immediate Stairs: #{ immediate_stairs.inspect }"
-    puts "Distant captive directions: #{ distant_captives.inspect }"
+    puts "Distant captives: #{ distant_captives.inspect }"
+    puts "Distant ticking captives: #{ distant_captives(ticking: true).inspect }"
+    puts "Immediate enemies between me and ticking captives: #{ immediate_enemies_between.inspect }"
 
-    if immediate_enemies.count > 0
-      if immediate_enemies.count == 1
-        warrior.attack!(immediate_enemies.first)
-      else
-        warrior.bind!(immediate_enemies.first)
-      end
+  
+    if immediate_captives(ticking: true).count > 0
+      warrior.rescue!(immediate_captives(ticking: true).first)
     else
-      if taking_damage?
-        if warrior.health > ENEMY_BUFFER # can I survive?
-          # TODO move TOWARDS the enemy or shoot him if he's within range
-          warrior.walk!(warrior.direction_of_stairs)
-        else
-          # if not, find shelter to rest
-          warrior.walk!(:backward)
-        end
+      if immediate_enemies_between.count > 0
+        warrior.attack!(immediate_enemies_between.first)
       else
-        if unhealthy?
-          warrior.rest!
+
+        if distant_captives(ticking: true).count > 0
+          move(direction: distant_captives(ticking: true).first)
         else
-          if immediate_captives.count > 0
-            warrior.rescue!(immediate_captives.first)
-          else
-            if distant_captives.count > 0
-              move(direction: distant_captives.first)
+          if immediate_enemies.count > 0
+            puts "IMMEDIATE ENEMY FOUND, attacking and binding"
+            if immediate_enemies.count == 1
+              warrior.attack!(immediate_enemies.first)
             else
-              if distant_enemies.count > 0
-                move(direction: distant_enemies.first)
-              else
+              warrior.bind!(immediate_enemies.first)
+            end
+
+          else
+
+            if taking_damage?
+
+              if warrior.health > ENEMY_BUFFER # can I survive?
+                # TODO move TOWARDS the enemy or shoot him if he's within range
                 warrior.walk!(warrior.direction_of_stairs)
+              else
+                # if not, find shelter to rest
+                warrior.walk!(:backward)
+              end
+
+            else
+            
+              if unhealthy?
+                warrior.rest!
+              else
+
+                if immediate_captives.count > 0
+                  warrior.rescue!(immediate_captives.first)
+                else
+                  if distant_captives.count > 0
+                    move(direction: distant_captives.first)
+                  else
+                    if distant_enemies.count > 0
+                      move(direction: distant_enemies.first)
+                    else
+                      warrior.walk!(warrior.direction_of_stairs)
+                    end
+                  end
+                end
               end
             end
           end
@@ -118,9 +144,15 @@ class Player
     end
   end
 
-  def immediate_captives
+  def immediate_enemies_between
+    immediate_enemies.select do |enemy_direction|
+      distant_captives(ticking: true).any? { |direction| direction == enemy_direction }
+    end
+  end
+
+  def immediate_captives(ticking: false)
     DIRECTIONS.select do |direction|
-      captive_in_direction?(direction: direction)
+      captive_in_direction?(direction: direction, ticking: ticking)
     end
   end
 
@@ -130,9 +162,9 @@ class Player
     end
   end
 
-  def distant_captives
+  def distant_captives(ticking: false)
     warrior.listen.select do |space|
-      space.captive?
+      space.captive? && space.ticking? == ticking
     end.map do |space|
       warrior.direction_of(space)
     end
@@ -156,8 +188,8 @@ class Player
     warrior.feel(direction).enemy?
   end
 
-  def captive_in_direction?(direction:)
-    warrior.feel(direction).captive?
+  def captive_in_direction?(direction:, ticking:)
+    warrior.feel(direction).captive? && warrior.feel(direction).ticking? == ticking
   end
 
   def stairs_in_direction?(direction:)

@@ -51,10 +51,10 @@ class Player
             warrior.rescue!(immediate_captives.first)
           else
             if distant_captives.count > 0
-              warrior.walk!(distant_captives.first)
+              move(direction: distant_captives.first)
             else
               if distant_enemies.count > 0
-                warrior.walk!(distant_enemies.first)
+                move(direction: distant_enemies.first)
               else
                 warrior.walk!(warrior.direction_of_stairs)
               end
@@ -65,6 +65,39 @@ class Player
     end
 
     @prior_health = warrior.health
+  end
+
+  def move(direction:)
+    if warrior.feel(direction).stairs?
+      # choose a different direction
+      new_direction = if warrior.feel(left_of(direction: direction)).wall?
+        if warrior.feel(left_of(direction: left_of(direction: direction))).wall?
+          if warrior.feel(left_of(direction: left_of(direction: left_of(direction: direction)))).wall?
+            raise 'This will probably never happen'
+          else
+            left_of(directon: left_of(direction: left_of(direction: direction)))
+          end
+        else
+          left_of(directon: left_of(direction: direction))
+        end
+      else
+        left_of(direction: direction)
+      end
+
+      # sidestep
+      warrior.walk!(new_direction)
+    else
+      warrior.walk!(direction)
+    end
+  end
+
+  def left_of(direction:)
+    {
+      forward: :left,
+      left: :backward,
+      backward: :right,
+      right: :forward
+    }[direction]
   end
 
   def unhealthy?

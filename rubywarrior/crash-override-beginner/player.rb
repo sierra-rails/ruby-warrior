@@ -11,18 +11,22 @@ class Player
   def play_turn(warrior)
     @warrior = warrior
     puts "Warrior Health: #{ warrior.health }"
-    # debugger
 
     if taking_damage?
+      puts "🤕 TAKING DAMAGE"
       taking_damage_tactic!
     else
       if unhealthy?
+        puts "💊 UNHEALTHY"
         if next_space.stairs?
           warrior.walk!(:forward) # just go down the stairs instead of resting
         else
-          warrior.rest!
+          attack_or do
+            warrior.rest!
+          end
         end
       else
+        puts "🏔️ EXPLORING"
         explore!
       end
     end
@@ -32,11 +36,7 @@ class Player
 
   def taking_damage_tactic!
     # i'm taking damage, figure out who I'm taking damage from
-    if enemy_in_next_space?
-      warrior.attack!(:forward)
-    elsif enemy_in_previous_space?
-      warrior.attack(:previous)
-    else
+    attack_or do
       # it's an archer
       if warrior.health > ARCHER_BUFFER # can I survive?
         warrior.walk!
@@ -44,6 +44,20 @@ class Player
         # if not, find shelter to rest
         warrior.walk!(:backward)
       end
+    end
+  end
+
+  def attack_or
+    if enemy_in_next_space?
+      warrior.attack!(:forward)
+    elsif enemy_in_previous_space?
+      warrior.attack(:previous)
+    elsif enemy_ahead?
+      warrior.shoot!(:forward)
+    elsif enemy_behind?
+      warrior.shoot!(:backward)
+    else
+      yield
     end
   end
 
@@ -76,6 +90,20 @@ class Player
       false # haven't started yet
     else
       warrior.health < @prior_health # current health is less than prior health
+    end
+  end
+
+  def enemy_ahead?
+    enemy_nearby?(direction: :forward)
+  end
+
+  def enemy_behind?
+    enemy_nearby?(direction: :backward)
+  end
+
+  def enemy_nearby?(direction:)
+    warrior.look(direction).any? do |space|
+      space.enemy?
     end
   end
 

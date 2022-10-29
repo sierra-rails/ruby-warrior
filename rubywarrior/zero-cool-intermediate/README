@@ -1,22 +1,27 @@
-Level 7
+Level 8
 
-Another ticking sound, but some sludge is blocking the way.
+You discover a satchel of bombs which will help when facing a mob of enemies.
 
-Tip: Quickly kill the sludge and rescue the captive before the bomb goes off. You can't simply go around them.
+Tip: Detonate a bomb when you see a couple enemies ahead of you (warrior.look). Watch out for your health too.
 
- -----
-| sC >|
-|@ s C|
-| s   |
- -----
+ -------
+|@ Ss C>|
+ -------
 
   > = Stairs
   @ = zero_cool (20 HP)
-  s = Sludge (12 HP)
   C = Captive (1 HP)
+  S = Thick Sludge (24 HP)
+  s = Sludge (12 HP)
 
 
 Warrior Abilities:
+
+  warrior.look
+    Returns an array of up to three Spaces in the given direction (forward by default).
+
+  warrior.detonate!
+    Detonate a bomb in a given direction (forward by default) which damages that space and surrounding 4 spaces (including yourself).
 
   warrior.listen
     Returns an array of all spaces which have units in them.

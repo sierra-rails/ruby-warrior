@@ -1,9 +1,9 @@
 require 'debug'
 
 # - Rescue immediate ticking captives (if any)
+# - Bind immediate enemies (if any)
 # - Attack enemies immediately between me and ticking captives (if any)
 # - Move towards distant captives, prioritizing ticking ones
-# - Bind immediate enemies (if any)
 # - Attack immediate enemies (if any)
 # - if under attack, move towards nearest enemy
 # - otherwise rest
@@ -37,21 +37,25 @@ class Player
     if immediate_captives(ticking: true).count > 0
       warrior.rescue!(immediate_captives(ticking: true).first)
     else
-      if immediate_enemies_between.count > 0
-        warrior.attack!(immediate_enemies_between.first)
-      else
-
-        if distant_captives(ticking: true).count > 0
-          move(direction: distant_captives(ticking: true).first)
+      if immediate_enemies.count > 0
+        enemy_to_bind = immediate_enemies.reject {|enemy_direction| immediate_enemies_between.any? {|ieb| ieb == enemy_direction } }.first
+        
+        if distant_captives(ticking: true).count > 0 && !enemy_to_bind.nil?
+          warrior.bind!(enemy_to_bind)
         else
-          if immediate_enemies.count > 0
-            puts "IMMEDIATE ENEMY FOUND, attacking and binding"
-            if immediate_enemies.count == 1
-              warrior.attack!(immediate_enemies.first)
-            else
-              warrior.bind!(immediate_enemies.first)
-            end
+          if immediate_enemies.count == 1
+            warrior.attack!(immediate_enemies.first)
+          else
+            warrior.bind!(immediate_enemies.first)
+          end
+        end
+      else
+        if immediate_enemies_between.count > 0
+          warrior.attack!(immediate_enemies_between.first)
+        else
 
+          if distant_captives(ticking: true).count > 0
+            move(direction: distant_captives(ticking: true).first)
           else
 
             if taking_damage?

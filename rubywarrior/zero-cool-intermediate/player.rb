@@ -4,7 +4,9 @@ require 'debug'
 # - Attack immediate enemies (if any)
 # - if under attack, move towards nearest enemy
 # - otherwise rest
-# - Rescue immediate captives (if any) 
+# - Rescue immediate captives (if any)
+# - Move towards distant captives
+# - Move towards distant enemies
 # - Move towards the stairs
 
 class Player
@@ -24,6 +26,7 @@ class Player
     puts "Immediate Enemies: #{ immediate_enemies.inspect }"
     puts "Immediate Captives: #{ immediate_captives.inspect }"
     puts "Immediate Stairs: #{ immediate_stairs.inspect }"
+    puts "Distant captive directions: #{ distant_captives.inspect }"
 
     if immediate_enemies.count > 0
       if immediate_enemies.count == 1
@@ -47,7 +50,15 @@ class Player
           if immediate_captives.count > 0
             warrior.rescue!(immediate_captives.first)
           else
-            warrior.walk!(warrior.direction_of_stairs)
+            if distant_captives.count > 0
+              warrior.walk!(distant_captives.first)
+            else
+              if distant_enemies.count > 0
+                warrior.walk!(distant_enemies.first)
+              else
+                warrior.walk!(warrior.direction_of_stairs)
+              end
+            end
           end
         end
       end
@@ -86,14 +97,26 @@ class Player
     end
   end
 
+  def distant_captives
+    warrior.listen.select do |space|
+      space.captive?
+    end.map do |space|
+      warrior.direction_of(space)
+    end
+  end
+
+  def distant_enemies
+    warrior.listen.select do |space|
+      space.enemy?
+    end.map do |space|
+      warrior.direction_of(space)
+    end
+  end
+
   def enemy_nearby?(direction:)
     warrior.look(direction).any? do |space|
       space.enemy?
     end
-  end
-
-  def previous_space
-    warrior.feel(:backward)
   end
 
   def enemy_in_direction?(direction:)
